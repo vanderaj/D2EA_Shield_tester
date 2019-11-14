@@ -20,6 +20,8 @@ func showResults(bestResult resultT, boosterVariants []boosterT, dur time.Durati
 	fmt.Println("---- TEST SETUP ----")
 	fmt.Println()
 
+	fmt.Println("            Ship Name:", config.shipName)
+	fmt.Println("Shield Generator Size:", config.shieldGeneratorSize)
 	fmt.Println("      Shield Boosters:", config.shieldBoosterCount)
 	fmt.Printf("Shield Cell Bank Pool: %.1f Mj\n", config.scbHitPoint)
 	fmt.Printf("  Guardian SR Package: %0.1f Mj\n", config.guardianShieldHitPoint)
@@ -42,7 +44,7 @@ func showResults(bestResult resultT, boosterVariants []boosterT, dur time.Durati
 		} else {
 			fmt.Println("Survival Time:       [ Didn't die ]")
 		}
-		fmt.Println("Shield Generator:    [", shieldGenerator.name, "] - [", shieldGenerator.engineering, "] - [", shieldGenerator.experimental, "]")
+		fmt.Println("Shield Generator:    [", shieldGenerator.genType, "] - [", shieldGenerator.engineering, "] - [", shieldGenerator.experimental, "]")
 
 		var bestLoadOutStats = bestResult.loadOutStats
 

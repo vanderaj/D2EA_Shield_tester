@@ -9,11 +9,29 @@ import (
 	"strings"
 )
 
+// ID,Type,Engineering,Experimental,RegenRateBobus,ExpRes,KinRes,ThermRes,OptimalMultiplierBonus
+
 type generatorT struct {
-	ID                                  int
-	name, engineering, experimental     string
-	shieldStrength                      float64
-	regenRate, expRes, kinRes, thermRes float64
+	ID                       int
+	genType                  string
+	engineering              string
+	experimental             string
+	shieldStrength           float64
+	regenRateBonus           float64
+	expRes, kinRes, thermRes float64
+	optimalMultiplierBonus   float64
+}
+
+func getGeneratorStat(rating string, generator generatorT, shields []shieldT) shieldT {
+	var result shieldT
+
+	for _, shield := range shields {
+		if shield.shieldType == generator.genType && shield.shieldClass == config.shieldGeneratorSize && shield.shieldRating == rating {
+			result = shield
+		}
+	}
+
+	return result
 }
 
 func loadGenerators() []generatorT {
@@ -54,20 +72,21 @@ func loadGenerators() []generatorT {
 			continue
 		}
 
-		// ID,Type,Engineering,Experimental,shieldStrength,regenRate,ExpRes,KinRes,ThermRes
+		// ID,Type,Engineering,Experimental,RegenRateBobus,ExpRes,KinRes,ThermRes,OptimalMultiplierBonus
 
 		generator.ID, err = strconv.Atoi(record[0])
-		generator.name = record[1]
+		generator.genType = record[1]
 		generator.engineering = record[2]
 		generator.experimental = record[3]
-		generator.shieldStrength, err = strconv.ParseFloat(record[4], 64)
-		generator.regenRate, err = strconv.ParseFloat(record[5], 64)
-		generator.expRes, err = strconv.ParseFloat(record[6], 64)
+
+		generator.regenRateBonus, err = strconv.ParseFloat(record[4], 64)
+		generator.expRes, err = strconv.ParseFloat(record[5], 64)
 		generator.expRes = 1.0 - generator.expRes
-		generator.kinRes, err = strconv.ParseFloat(record[7], 64)
+		generator.kinRes, err = strconv.ParseFloat(record[6], 64)
 		generator.kinRes = 1.0 - generator.kinRes
-		generator.thermRes, err = strconv.ParseFloat(record[8], 64)
+		generator.thermRes, err = strconv.ParseFloat(record[7], 64)
 		generator.thermRes = 1.0 - generator.thermRes
+		generator.optimalMultiplierBonus, err = strconv.ParseFloat(record[8], 64)
 
 		generators = append(generators, generator)
 	}

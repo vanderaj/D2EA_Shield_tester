@@ -4,24 +4,33 @@ import (
 	"sync"
 )
 
-func testCase(ch chan resultT, wg *sync.WaitGroup, shieldGenerator generatorT, boosterVariants []boosterT, shieldBoosterLoadoutList [][]int) {
+func testCase(ch chan resultT, wg *sync.WaitGroup, shieldGenerator generatorT, shields []shieldT, boosterVariants []boosterT, shieldBoosterLoadoutList [][]int) {
 	bestTestCase := resultT{
 		survivalTime: 0.0,
 	}
 
 	var result resultT
+	var shieldRating string
+
+	if shieldGenerator.genType == "Bi-Weave" {
+		shieldRating = "C"
+	} else {
+		shieldRating = "A"
+	}
+
+	generatorStat := getGeneratorStat(shieldRating, shieldGenerator, shields)
+	shieldGeneratorBaseHitPoint := getShieldHP(generatorStat)
 
 	for _, shieldBoosterLoadout := range shieldBoosterLoadoutList {
-		// Calculate the resistance, regen-rate and hitpoints of the current loadout
-		var loadoutStats = getLoadoutStats(shieldGenerator, shieldBoosterLoadout, boosterVariants)
+		var loadoutStats = getLoadoutStats(shieldGenerator, shieldGeneratorBaseHitPoint, generatorStat.regen, shieldBoosterLoadout, boosterVariants)
 
 		var actualDPS float64 = config.damageEffectiveness*
-			(config.explosiveDPS*loadoutStats.explosiveResistance+
-				config.kineticDPS*loadoutStats.kineticResistance+
-				config.thermalDPS*loadoutStats.thermalResistance+
+			(config.explosiveDPS*(1-loadoutStats.explosiveResistance)+
+				config.kineticDPS*(1-loadoutStats.kineticResistance)+
+				config.thermalDPS*(1-loadoutStats.thermalResistance)+
 				config.absoluteDPS) - loadoutStats.regenRate*(1-config.damageEffectiveness)
 
-		var survivalTime float64 = (loadoutStats.hitPoints + config.scbHitPoint) / actualDPS
+		var survivalTime float64 = loadoutStats.hitPoints / actualDPS
 
 		result = resultT{
 			shieldGenerator:      shieldGenerator,
@@ -45,7 +54,7 @@ func testCase(ch chan resultT, wg *sync.WaitGroup, shieldGenerator generatorT, b
 	wg.Done()
 }
 
-func testGenerators(generators []generatorT, boosterVariants []boosterT, boosterList [][]int) resultT {
+func testGenerators(generators []generatorT, shields []shieldT, boosterVariants []boosterT, boosterList [][]int) resultT {
 	bestResult := resultT{survivalTime: 0.0}
 
 	ch := make(chan resultT, len(generators))
@@ -53,7 +62,7 @@ func testGenerators(generators []generatorT, boosterVariants []boosterT, booster
 
 	for _, generator := range generators {
 		wg.Add(1)
-		go testCase(ch, &wg, generator, boosterVariants, boosterList)
+		go testCase(ch, &wg, generator, shields, boosterVariants, boosterList)
 	}
 
 	wg.Wait()

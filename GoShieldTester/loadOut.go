@@ -8,12 +8,12 @@ type loadOutStatT struct {
 	thermalResistance   float64
 }
 
-func getLoadoutStats(shieldGeneratorVariant generatorT, shieldBoosterLoadout []int, boosterVariants []boosterT) loadOutStatT {
+func getLoadoutStats(shieldGeneratorVariant generatorT, shieldGeneratorBaseHitPoint float64, shieldGenertorBaseRecharge float64, shieldBoosterLoadout []int, boosterVariants []boosterT) loadOutStatT {
 
 	var expModifier float64 = 1.0
 	var kinModifier float64 = 1.0
 	var thermModifier float64 = 1.0
-	var hitPointBonus float64 = 1.0
+	var boosterHitPointBonus float64 = 0.0
 
 	var expRes, kinRes, thermRes, hitPoints float64
 
@@ -25,7 +25,7 @@ func getLoadoutStats(shieldGeneratorVariant generatorT, shieldBoosterLoadout []i
 		expModifier = expModifier * boosterVariantStats.expResBonus
 		kinModifier = kinModifier * boosterVariantStats.kinResBonus
 		thermModifier = thermModifier * boosterVariantStats.thermResBonus
-		hitPointBonus = hitPointBonus + boosterVariantStats.shieldStrengthBonus
+		boosterHitPointBonus = boosterHitPointBonus + boosterVariantStats.shieldStrengthBonus
 	}
 
 	// Compensate for diminishing returns
@@ -42,16 +42,17 @@ func getLoadoutStats(shieldGeneratorVariant generatorT, shieldBoosterLoadout []i
 	}
 
 	// Compute final Resistance
-	expRes = shieldGeneratorVariant.expRes * expModifier
-	kinRes = shieldGeneratorVariant.kinRes * kinModifier
-	thermRes = shieldGeneratorVariant.thermRes * thermModifier
+	expRes = 1 - ((1 - shieldGeneratorVariant.expRes) * expModifier)
+	kinRes = 1 - ((1 - shieldGeneratorVariant.kinRes) * kinModifier)
+	thermRes = 1 - ((1 - shieldGeneratorVariant.thermRes) * thermModifier)
 
 	// Compute final Hitpoints
-	hitPoints = hitPointBonus*shieldGeneratorVariant.shieldStrength + config.scbHitPoint + config.guardianShieldHitPoint
+	// $HitPoints = $ShieldGenertorBaseHitPoint * (1 + $ShieldGenratorVariant.OptimalMultiplierBonus) * (1 + $BoosterHitPointBonus)
+	hitPoints = float64(shieldGeneratorBaseHitPoint) * (1 + shieldGeneratorVariant.optimalMultiplierBonus) * (1 + boosterHitPointBonus)
 
 	return loadOutStatT{
-		hitPoints:           hitPoints,
-		regenRate:           shieldGeneratorVariant.regenRate,
+		hitPoints:           hitPoints + config.scbHitPoint + config.guardianShieldHitPoint,
+		regenRate:           shieldGenertorBaseRecharge * (1.0 + shieldGeneratorVariant.regenRateBonus),
 		explosiveResistance: expRes,
 		kineticResistance:   kinRes,
 		thermalResistance:   thermRes,
